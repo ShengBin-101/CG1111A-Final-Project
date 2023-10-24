@@ -95,10 +95,11 @@
 #define NOTE_DS8 4978
 
 static int music_key[] = {
-    NOTE_E7, NOTE_E7, 0, NOTE_E7, 
-    0, NOTE_C7, NOTE_E7, 0,
-    NOTE_G7, 0, 0,  0,
-    NOTE_G6, 0, 0, 0, 
+    NOTE_E7, NOTE_E7
+    // , 0, NOTE_E7, 
+    // 0, NOTE_C7, NOTE_E7, 0,
+    // NOTE_G7, 0, 0,  0,
+    // NOTE_G6, 0, 0, 0, 
 
     // NOTE_C7, 0, 0, NOTE_G6, 
     // 0, 0, NOTE_E6, 0, 
@@ -121,10 +122,11 @@ static int music_key[] = {
     // NOTE_D7, NOTE_B6, 0, 0  
 };
 static int music_duration[] = {
-    12, 12, 12, 12, 
-    12, 12, 12, 12,
-    12, 12, 12, 12,
-    12, 12, 12, 12, 
+    12, 12
+    // , 12, 12, 
+    // 12, 12, 12, 12,
+    // 12, 12, 12, 12,
+    // 12, 12, 12, 12, 
 
     // 12, 12, 12, 12,
     // 12, 12, 12, 12, 
