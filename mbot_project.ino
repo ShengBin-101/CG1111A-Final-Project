@@ -6,10 +6,11 @@
 /********** Settings **********/
 
 #define MUSIC_PIN         8
-#define ULTRASONIC        12
+// #define ULTRASONIC        12
 MeDCMotor                 leftWheel(M1); // assigning leftMotor to port M1
 MeDCMotor                 rightWheel(M2); // assigning RightMotor to port M2
 MeLineFollower            lineFinder(PORT_2);
+MeUltrasonicSensor        ultraSensor(PORT_1);  
 MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
 
@@ -54,7 +55,7 @@ MeBuzzer                  buzzer;
 */
 
 /********** Global Variables **********/
-bool busy = true;
+bool stop = false;
 bool status = false; // global status; 0 = do nothing, 1 = mBot runs
 
 void setup()
@@ -62,14 +63,12 @@ void setup()
   // Any setup code here runs only once:
   led.setpin(13);
   pinMode(MUSIC_PIN, OUTPUT);
-  pinMode(ULTRASONIC, OUTPUT);
-  //Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(A7, INPUT); // Setup A7 as input for the push button
   led.setColorAt(0, 0, 255, 0); // set Right LED to Red
   led.setColorAt(1, 0, 255, 0); // set Left LED to Blue
   led.show();
   delay(2000); // Do nothing for 10000 ms = 10 seconds
-  //  busy = false;
 }
 
 void stopMove(const int i);
@@ -81,21 +80,36 @@ void loop()
 {
   if (status == true) { // run mBot only if status is 1
     int sensorState = lineFinder.readSensors(); // read the line sensor's state
-    if (sensorState == S1_OUT_S2_OUT) { // situation 1
+    if (sensorState != S1_IN_S2_IN) { // situation 1
       led.setColor(255, 255, 255);
       led.show();
       moveForward();
+
+      Serial.print("Distance : ");
+      Serial.print(ultraSensor.distanceCm() );
+      Serial.println(" cm");
+      if (ultraSensor.distanceCm() < 7)
+      {
+        stop = true;
+        status = false;
+      }
     }
-    else if (sensorState == S1_IN_S2_IN){
+    else{
+      stop = true;
+      status = false;
+    }
+  }
+  else{
+    if (stop == true)
+    {
       led.setColorAt(0, 255, 0, 0); // set Right LED to Red
       led.setColorAt(1, 0, 0, 255); // set Left LED to Blue
       led.show();
       stopMove(0);
-      status = false;
       finishWaypoint();
+      stop = false;
     }
-  }
-  else{
+    
     if (analogRead(A7) < 100) { // If push button is pushed
       status = !status; // Toggle status
       delay(500); // Delay 500ms so that a button push won't be counted multiple times.
@@ -158,6 +172,8 @@ void uTurn() {
   turnRight();
   turnRight();
 }
+
+
 
 void finishWaypoint() {
   // keys and durations found in NOTES.h
