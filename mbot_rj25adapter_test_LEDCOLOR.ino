@@ -15,8 +15,13 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  // A2 LOW GIVES RED
-  // A2 HIGH GIVES GREEN
+  // for (int c = 0; c < 2; c++)
+  // {
+  //   // go through each port (c = 0 => A2, c = 1 => A3)
+  //   // A2 port's state will correspond with truth[x][0]
+  //   // A3 port's state will correspond with truth[x][1]
+  // }
+
   digitalWrite(A2, HIGH);
   digitalWrite(A3, LOW);
   delay(1000);
@@ -26,7 +31,7 @@ void loop() {
   digitalWrite(A2, HIGH);
   digitalWrite(A3, HIGH);
   delay(1000);
-  // digitalWrite(A2, LOW);
-  // digitalWrite(A3, LOW);
-  // delay(1000);
+  digitalWrite(A2, LOW);
+  digitalWrite(A3, LOW);
+  delay(500);
 }
