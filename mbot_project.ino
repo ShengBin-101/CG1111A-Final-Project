@@ -27,7 +27,7 @@ MeBuzzer                  buzzer;
 #define TIME_FOR_1_GRID   (180000/MOTORSPEED) // TO BE TESTED
 
 /********** Variables for PID Controller **********/
-const double kp = 50;            //   - For A component of PID
+const double kp = 50;            //   - For P component of PID
  const double ku = 100;          //  - For D component of PID
  const double tu = 10.5 / 17;    //  - For D component of PID
  const double kd = 0.1 * ku * tu;//  - For D component of PID
