@@ -6,13 +6,18 @@
 /********** Define Ports **********/
 #define MUSIC_PIN         8
 #define ULTRASONIC        12
+#define LDR               A0
 MeDCMotor                 leftWheel(M1);        // assigning LeftMotor to port M1
 MeDCMotor                 rightWheel(M2);       // assigning RightMotor to port M2
 MeLineFollower            lineFinder(PORT_2);
 MeUltrasonicSensor        ultraSensor(PORT_1);  
 MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
+// Define time delay before the next RGB colour turns ON to allow LDR to stabilize
+#define RGBWait 500 //in milliseconds 
 
+// Define time delay before taking another LDR reading
+#define LDRWait 20 //in milliseconds 
 /********** Constants **********/
 // Ultrasound
 #define TIMEOUT           2000 // Max microseconds to wait; choose according to max distance of wall
@@ -42,6 +47,23 @@ double prev_error = 0;  // - For D component of PID
 double error_delta;    // - For D component of PID
 
 /********** Color Detection Parameters - To be updated from coloudcalibration.ino file after calibration **********/
+// Define colour sensor LED pins
+int ledArray[] = { A2, A3 };
+int truth[][2] = { { 0, 1 }, { 1, 0 }, { 1, 1 } };
+
+char colourStr[3][5] = {"B = ", "G = ", "R = "};
+
+int color; // colour detected [0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - black]
+
+int blue = 0;
+int green = 0;
+int red = 0;
+
+//floats to hold colour arrays
+float colourArray[] = {0,0,0};
+float whiteArray[] = {1000.00,994.00,984.00};
+float blackArray[] = {939.00,811.00,943.00};
+float greyDiff[] = {61.00,183.00,41.00};
 /* 
 #define COL_DIST        5000                    // 10000
 #define WHI_VAL         {375, 335, 380}         // from LDR b4 normalisation
@@ -90,9 +112,16 @@ void setup()
   pinMode(MUSIC_PIN, OUTPUT);
   Serial.begin(9600);
   // pinMode(A7, INPUT); // Setup A7 as input for the push button
-  led.setColorAt(0, 0, 255, 0); // set Right LED to Red
-  led.setColorAt(1, 0, 255, 0); // set Left LED to Blue
+  led.setColor(128, 255, 0); // set LED to Green
+
   led.show();
+  for(int c = 0;c < 2;c++){
+    pinMode(ledArray[c],OUTPUT);  
+  }
+  for (int zz = 0; zz < 2; zz++) {
+    digitalWrite(ledArray[zz], 0);
+  }
+
   delay(2000); // Do nothing for 10000 ms = 10 seconds
 }
 
@@ -110,15 +139,23 @@ void loop()
       }
       else
       {
-        led.setColor(0, 0, 255);
+        led.setColor(0, 255, 255);
         led.show();
         // no wall detected, try to move straight
         move(MOTORSPEED, 240);
       }
     }
     else{
-      stop = true;
-      status = false;
+      Serial.println("Stopping");
+      stopMove();
+      Serial.println("Reading Colour");
+      read_color();
+      Serial.println("Classifying Color");
+      color = classify_color();
+      Serial.println("Executing Waypoint");
+      execute_waypoint(color);
+      
+      
     }
   }
   else{
@@ -203,20 +240,27 @@ void pd_control() {
  * ultrasonic sensor and the closest object (wall) to it. Sets dist to OUT_OF_RANGE if out of range.
  */
 void ultrasound() {
-  pinMode(ULTRASONIC, OUTPUT);
-  digitalWrite(ULTRASONIC, LOW);
-  delayMicroseconds(2);
-  digitalWrite(ULTRASONIC, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(ULTRASONIC, LOW);
-  pinMode(ULTRASONIC, INPUT);
 
-  long duration = pulseIn(ULTRASONIC, HIGH, TIMEOUT);
-  if (duration > 0) {
-    dist = duration / 2.0 / 1000000 * SPEED_OF_SOUND * 100;
-  } else {
+  dist = ultraSensor.distanceCm();
+  if (dist > 15)
+  {
+
     dist = OUT_OF_RANGE;
   }
+  // pinMode(ULTRASONIC, OUTPUT);
+  // digitalWrite(ULTRASONIC, LOW);
+  // delayMicroseconds(2);
+  // digitalWrite(ULTRASONIC, HIGH);
+  // delayMicroseconds(10);
+  // digitalWrite(ULTRASONIC, LOW);
+  // pinMode(ULTRASONIC, INPUT);
+
+  // long duration = pulseIn(ULTRASONIC, HIGH, TIMEOUT);
+  // if (duration > 0) {
+  //   dist = duration / 2.0 / 1000000 * SPEED_OF_SOUND * 100;
+  // } else {
+  //   dist = OUT_OF_RANGE;
+  // }
   Serial.println(dist);
 }
 
@@ -232,7 +276,213 @@ bool on_line() {
   return false;
 }
 
+/**
+ * This function finds the average reading of LDR for greater accuracy of LDR readings
+ *
+ * @param[in] times Number of times to iterate and repeat before finding average
+ *
+ * @return Returns the averaged LDR values across times iterations
+ */
+int getAvgReading(int times) {
+  //find the average reading for the requested number of times of scanning LDR
+  int reading;
+  int total = 0;
+  //take the reading as many times as requested and add them up
+  for (int i = 0; i < times; i++) {
+    reading = analogRead(LDR);
+    total = reading + total;
+    delay(LDRWait);
+  }
+  //calculate the average and return it
+  return total / times;
+}
+
+/**
+ * This function sets the global array colourArray to reflect the RGB values sensed by the LDR with correspondence to
+ * lighting up of the red, green and blue lights
+ */
+void read_color() {
+  // turn on one colour at a time and LDR reads 5 times
+//turn on one colour at a time and LDR reads 5 times
+  for(int c = 0;c <= 2;c++){    
+    Serial.print(colourStr[c]);
+    // TURN ON LIGHT
+    for (int zz = 0; zz < 2; zz++) {
+      digitalWrite(ledArray[zz], truth[c][zz]);
+    }
+    delay(RGBWait);
+//get the average of 5 consecutive readings for the current colour and return an average 
+    colourArray[c] = getAvgReading(5);
+//the average reading returned minus the lowest value divided by the maximum possible range, multiplied by 255 will give a value between 0-255, representing the value for the current reflectivity (i.e. the colour LDR is exposed to)
+    int result = (colourArray[c] - blackArray[c])/(greyDiff[c])*255;
+    if (result > 255)
+    {
+      result = 255;
+    }
+    else if (result < 0)
+    {
+      result = 0;
+    }
+    colourArray[c] = result;
+    // TURN OFF LIGHT
+     for (int zz = 0; zz < 2; zz++) {
+      digitalWrite(ledArray[zz], 0);
+    }
+    delay(RGBWait);
+    Serial.println(int(colourArray[c])); //show the value for the current colour LED, which corresponds to either the R, G or B of the RGB code
+  } 
+
+}
+
+int classify_color() {
+  // turn on one colour at a time and LDR reads 5 times
+  // colour detected [0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - black]
+
+  blue = colourArray[0];
+  green = colourArray[1];
+  red = colourArray[2];
+  
+  // Serial.print("B: ");
+  // Serial.print(blue);
+  // Serial.print(" G: ");
+  // Serial.print(green);
+  // Serial.print(" R: ");
+  // Serial.print(red);
+  
+  if (withinWhite())
+  {
+    return 0;
+  }
+  if (withinRed())
+  {
+    return 1;
+  }
+  if (withinBlue())
+  {
+    return 2;
+  }
+  if (withinGreen())
+  {
+    return 3;
+  }
+  if (withinOrange())
+  {
+    return 4;
+  }
+  if (withinPurple())
+  {
+    return 5;
+  }
+  return 6;
+}
+
+bool withinWhite()
+{
+  if ( (240 <= blue && blue <= 255) && (240 <= green && green <= 255) &&(240 <= red && red <= 255)  )
+  {
+    // Serial.println("White Detected.");
+    return true;
+  }
+  return false;
+}
+
+bool withinRed()
+{
+  if ( (70 <= blue && blue <= 110) && (85 <= green && green <= 150) &&(230 <= red && red <= 255)  )
+  {
+    // Serial.println("Red Detected.");
+    return true;
+  }
+  return false;
+}
+
+bool withinBlue()
+{
+    if ( (240 <= blue && blue <= 255) && (195 <= green && green <= 240) &&(85 <= red && red <= 105)  )
+    {
+      // Serial.println("Blue Detected.");
+      return true;
+    }
+    return false;
+}
+
+bool withinGreen()
+{
+    if ( (80 <= blue && blue <= 140) && (150 <= green && green <= 210) &&(30 <= red && red <= 80)  )
+    {
+      // Serial.println("Green Detected.");
+      return true;
+    }
+    return false;
+}
+
+bool withinOrange()
+{
+    if ( (80 <= blue && blue <= 115) && (150 <= green && green <= 205) &&(240 <= red && red <= 255)  )
+    {
+      // Serial.println("Orange Detected.");
+      return true;
+    }
+    return false;
+}
+
+bool withinPurple()
+{
+    if ( (190 <= blue && blue <= 230) && (140 <= green && green <= 200) &&(150 <= red && red <= 180)  )
+    {
+      // Serial.println("Purple Detected.");
+      return true;
+    }
+    return false;
+}
+
 /********** Functions (Waypoints) **********/
+
+void execute_waypoint(const int color)
+{
+  switch(color) {
+  case 0:
+    // code block for white
+    stop = true;
+    status = false;
+    break;
+  case 1:
+    // code block for red
+    led.setColor(255, 0, 0); // set Right LED to Red
+    led.show();
+    turnLeft();
+    break;
+  case 2:
+    // code block for blue
+    led.setColor(0, 0, 255); // set Right LED to Red
+    led.show();
+    doubleRight();
+    break;
+  case 3:
+    // code block for green
+    led.setColor(0, 255, 0); // set Right LED to Red
+    led.show();
+    turnRight();
+    break;
+  case 4: 
+    // code block for orange
+    led.setColor(153, 76, 0); // set Right LED to Red
+    led.show();
+    uTurn();
+    break;
+  case 5:
+    // code block for purple
+    led.setColor(153, 51, 255); // set Right LED to Red
+    led.show();
+    doubleLeft();
+    break;
+  default:
+    // code block for black or no color classified
+    led.setColor(0, 0, 0); // set Right LED to Red
+    led.show();
+    break;
+  }
+}
 
 void forwardGrid() {
   leftWheel.run(-MOTORSPEED);

@@ -76,7 +76,7 @@ void loop(){
     colourArray[c] = (colourArray[c] - blackArray[c])/(greyDiff[c])*255;
     // TURN OFF LIGHT
      for (int zz = 0; zz < 2; zz++) {
-      digitalWrite(ledArray[zz], 1);
+      digitalWrite(ledArray[zz], 0);
     }
     delay(RGBWait);
     Serial.println(int(colourArray[c])); //show the value for the current colour LED, which corresponds to either the R, G or B of the RGB code
@@ -100,7 +100,7 @@ void setBalance(){
      whiteArray[i] = getAvgReading(5);         //scan 5 times and return the average, 
      // TURN OFF LIGHT
      for (int zz = 0; zz < 2; zz++) {
-      digitalWrite(ledArray[zz], 1);
+      digitalWrite(ledArray[zz], 0);
     }
      delay(RGBWait);
   }
@@ -118,7 +118,7 @@ void setBalance(){
      blackArray[i] = getAvgReading(5);
      // TURN OFF LIGHT
      for (int zz = 0; zz < 2; zz++) {
-      digitalWrite(ledArray[zz], 1);
+      digitalWrite(ledArray[zz], 0);
     }
      delay(RGBWait);
 //the differnce between the maximum and the minimum gives the range
