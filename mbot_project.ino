@@ -32,7 +32,7 @@ MeBuzzer                  buzzer;
 #define TIME_FOR_1_GRID   (180000/MOTORSPEED) // TO BE TESTED
 
 /********** Variables for PID Controller **********/
-const double kp = 50;            //   - For P component of PID
+const double kp = 30;            //   - For P component of PID
  const double ku = 100;          //  - For D component of PID
  const double tu = 10.5 / 17;    //  - For D component of PID
  const double kd = 0.1 * ku * tu;//  - For D component of PID
@@ -61,9 +61,9 @@ int red = 0;
 
 //floats to hold colour arrays
 float colourArray[] = {0,0,0};
-float whiteArray[] = {1000.00,994.00,984.00};
-float blackArray[] = {939.00,811.00,943.00};
-float greyDiff[] = {61.00,183.00,41.00};
+float whiteArray[] = {919.00,934.00,760.00};
+float blackArray[] = {525.00,618.00,442.00};
+float greyDiff[] = {394.00,316.00,318.00};
 /* 
 #define COL_DIST        5000                    // 10000
 #define WHI_VAL         {375, 335, 380}         // from LDR b4 normalisation
@@ -136,6 +136,7 @@ void loop()
         led.setColor(255, 255, 255);
         led.show();
         pd_control();
+        // delay(50);
       }
       else
       {
@@ -154,6 +155,7 @@ void loop()
       color = classify_color();
       Serial.println("Executing Waypoint");
       execute_waypoint(color);
+      delay(500);
       
       
     }
@@ -207,6 +209,7 @@ void stopMove() {
  * The D component of this PID controller can be commented out as it seems that P alone is enough.
  */
 void pd_control() {
+
   if (dist != OUT_OF_RANGE) {
     error = desired_dist - dist;
     error_delta = error - prev_error; //   - For D Component of PID
@@ -242,7 +245,7 @@ void pd_control() {
 void ultrasound() {
 
   dist = ultraSensor.distanceCm();
-  if (dist > 15)
+  if (dist > 14)
   {
 
     dist = OUT_OF_RANGE;
@@ -378,9 +381,9 @@ int classify_color() {
 
 bool withinWhite()
 {
-  if ( (240 <= blue && blue <= 255) && (240 <= green && green <= 255) &&(240 <= red && red <= 255)  )
+  if ( (220 <= blue && blue <= 255) && (220 <= green && green <= 255) &&(190 <= red && red <= 255)  )
   {
-    // Serial.println("White Detected.");
+    Serial.println("White Detected.");
     return true;
   }
   return false;
@@ -388,9 +391,9 @@ bool withinWhite()
 
 bool withinRed()
 {
-  if ( (70 <= blue && blue <= 110) && (85 <= green && green <= 150) &&(230 <= red && red <= 255)  )
+  if ( (55 <= blue && blue <= 140) && (100 <= green && green <= 165) &&(170 <= red && red <= 255)  )
   {
-    // Serial.println("Red Detected.");
+    Serial.println("Red Detected.");
     return true;
   }
   return false;
@@ -398,9 +401,9 @@ bool withinRed()
 
 bool withinBlue()
 {
-    if ( (240 <= blue && blue <= 255) && (195 <= green && green <= 240) &&(85 <= red && red <= 105)  )
+    if ( (200 <= blue && blue <= 255) && (195 <= green && green <= 240) &&(80<= red && red <= 180)  )
     {
-      // Serial.println("Blue Detected.");
+      Serial.println("Blue Detected.");
       return true;
     }
     return false;
@@ -408,9 +411,9 @@ bool withinBlue()
 
 bool withinGreen()
 {
-    if ( (80 <= blue && blue <= 140) && (150 <= green && green <= 210) &&(30 <= red && red <= 80)  )
+    if ( (60 <= blue && blue <= 140) && (150 <= green && green <= 210) &&(50 <= red && red <= 130)  )
     {
-      // Serial.println("Green Detected.");
+      Serial.println("Green Detected.");
       return true;
     }
     return false;
@@ -418,9 +421,9 @@ bool withinGreen()
 
 bool withinOrange()
 {
-    if ( (80 <= blue && blue <= 115) && (150 <= green && green <= 205) &&(240 <= red && red <= 255)  )
+    if ( (50 <= blue && blue <= 130) && (150 <= green && green <= 210) &&(160 <= red && red <= 255)  )
     {
-      // Serial.println("Orange Detected.");
+      Serial.println("Orange Detected.");
       return true;
     }
     return false;
@@ -428,9 +431,9 @@ bool withinOrange()
 
 bool withinPurple()
 {
-    if ( (190 <= blue && blue <= 230) && (140 <= green && green <= 200) &&(150 <= red && red <= 180)  )
+    if ( (165 <= blue && blue <= 215) && (140 <= green && green <= 205) &&(100 <= red && red <= 215)  )
     {
-      // Serial.println("Purple Detected.");
+      Serial.println("Purple Detected.");
       return true;
     }
     return false;
@@ -494,14 +497,14 @@ void forwardGrid() {
 void turnRight() {
   leftWheel.run(-MOTORSPEED);
   rightWheel.run(-MOTORSPEED);
-  delay(TURNING_TIME_MS);
+  delay(370);
   stopMove();
 }
 
 void turnLeft() {
   leftWheel.run(MOTORSPEED);
   rightWheel.run(MOTORSPEED);
-  delay(TURNING_TIME_MS);
+  delay(400);
   stopMove();
 }
 
