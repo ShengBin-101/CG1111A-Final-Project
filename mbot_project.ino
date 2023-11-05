@@ -14,7 +14,7 @@ MeUltrasonicSensor        ultraSensor(PORT_1);
 MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
 // Define time delay before the next RGB colour turns ON to allow LDR to stabilize
-#define RGBWait 500 //in milliseconds 
+#define RGBWait 200 //in milliseconds 
 
 // Define time delay before taking another LDR reading
 #define LDRWait 20 //in milliseconds 
@@ -30,6 +30,10 @@ MeBuzzer                  buzzer;
 #define TIMEDELAY         20 // delay time before checking colour of waypoint
 #define SIDE_MAX          10 // side distance threshold in cm
 #define TIME_FOR_1_GRID   (180000/MOTORSPEED) // TO BE TESTED
+#define TIME_FOR_TURN     320
+#define TIME_FOR_SECOND_LEFT_TURN   420
+#define TIME_FOR_SECOND_RIGHT_TURN  400
+#define TIME_FOR_UTURN 590
 
 /********** Variables for PID Controller **********/
 const double kp = 30;            //   - For P component of PID
@@ -61,9 +65,14 @@ int red = 0;
 
 //floats to hold colour arrays
 float colourArray[] = {0,0,0};
-float whiteArray[] = {919.00,934.00,760.00};
-float blackArray[] = {525.00,618.00,442.00};
-float greyDiff[] = {394.00,316.00,318.00};
+float whiteArray[] = {893.00,941.00,714.00};
+float blackArray[] = {412.00,624.00,394.00};
+float greyDiff[] = {481.00,317.00,320.00};
+
+// Before 6 Nov
+// float whiteArray[] = {919.00,934.00,760.00};
+// float blackArray[] = {525.00,618.00,442.00};
+// float greyDiff[] = {394.00,316.00,318.00};
 /* 
 #define COL_DIST        5000                    // 10000
 #define WHI_VAL         {375, 335, 380}         // from LDR b4 normalisation
@@ -129,8 +138,8 @@ void loop()
 {
   if (status == true) { // run mBot only if status is 1
     ultrasound(); // updates global variable dist 
-    if (!on_line()) { // situation 1
-
+    // if (!on_line()) { // situation 1
+    if (false) {
       if (dist!= OUT_OF_RANGE)
       {
         led.setColor(255, 255, 255);
@@ -147,13 +156,13 @@ void loop()
       }
     }
     else{
-      Serial.println("Stopping");
+      // Serial.println("Stopping");
       stopMove();
       Serial.println("Reading Colour");
       read_color();
-      Serial.println("Classifying Color");
+      // Serial.println("Classifying Color");
       color = classify_color();
-      Serial.println("Executing Waypoint");
+      // Serial.println("Executing Waypoint");
       execute_waypoint(color);
       delay(500);
       
@@ -397,6 +406,13 @@ bool withinRed()
     return true;
   }
   return false;
+
+  // if ( (55 <= blue && blue <= 140) && (100 <= green && green <= 165) &&(170 <= red && red <= 255)  )
+  // {
+  //   Serial.println("Red Detected.");
+  //   return true;
+  // }
+  // return false;
 }
 
 bool withinBlue()
@@ -453,7 +469,7 @@ void execute_waypoint(const int color)
     // code block for red
     led.setColor(255, 0, 0); // set Right LED to Red
     led.show();
-    turnLeft();
+    turnLeft(TIME_FOR_TURN);
     break;
   case 2:
     // code block for blue
@@ -465,7 +481,7 @@ void execute_waypoint(const int color)
     // code block for green
     led.setColor(0, 255, 0); // set Right LED to Red
     led.show();
-    turnRight();
+    turnRight(TIME_FOR_TURN);
     break;
   case 4: 
     // code block for orange
@@ -494,35 +510,34 @@ void forwardGrid() {
   stopMove();
 }
 
-void turnRight() {
+void turnRight(int speed) {
   leftWheel.run(-MOTORSPEED);
   rightWheel.run(-MOTORSPEED);
-  delay(370);
+  delay(speed);
   stopMove();
 }
 
-void turnLeft() {
+void turnLeft(int speed) {
   leftWheel.run(MOTORSPEED);
   rightWheel.run(MOTORSPEED);
-  delay(400);
+  delay(speed);
   stopMove();
 }
 
 void doubleRight() {
-  turnRight();
+  turnRight(TIME_FOR_TURN);
   forwardGrid();
-  turnRight();
+  turnRight(TIME_FOR_SECOND_RIGHT_TURN);
 }
 
 void doubleLeft() {
-  turnLeft();
+  turnLeft(TIME_FOR_TURN);
   forwardGrid();
-  turnLeft();
+  turnLeft(TIME_FOR_SECOND_LEFT_TURN);
 }
 
 void uTurn() {
-  turnRight();
-  turnRight();
+  turnRight(TIME_FOR_UTURN);
 }
 
 /**
