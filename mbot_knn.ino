@@ -14,7 +14,7 @@ MeUltrasonicSensor        ultraSensor(PORT_1);
 MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
 // Define time delay before the next RGB colour turns ON to allow LDR to stabilize
-#define RGBWait 200 //in milliseconds 
+#define RGBWait 80 //in milliseconds 
 
 // Define time delay before taking another LDR reading
 #define LDRWait 20 //in milliseconds 
@@ -28,18 +28,20 @@ MeBuzzer                  buzzer;
 #define MOTORSPEED        255
 #define TURNING_TIME_MS   (75000/MOTORSPEED) // The time duration (ms) for turning 90 degrees
 #define TIMEDELAY         20 // delay time before checking colour of waypoint
-#define SIDE_MAX          10 // side distance threshold in cm
-#define TIME_FOR_1_GRID   (180000/MOTORSPEED) // TO BE TESTED
-#define TIME_FOR_TURN     320
-#define TIME_FOR_SECOND_LEFT_TURN   420
-#define TIME_FOR_SECOND_RIGHT_TURN  400
-#define TIME_FOR_UTURN 590
+#define SIDE_MAX          14 // side distance threshold in cm
+#define TIME_FOR_1_GRID   660 // TO BE TESTED
+#define TIME_FOR_1_GRID_B   700 // TO BE TESTED
+#define TIME_FOR_LEFT_TURN     340
+#define TIME_FOR_RIGHT_TURN    345
+#define TIME_FOR_SECOND_LEFT_TURN   340
+#define TIME_FOR_SECOND_RIGHT_TURN  340
+#define TIME_FOR_UTURN 600
 
 /********** Variables for PID Controller **********/
-const double kp = 30;            //   - For P component of PID
+const double kp = 25;            //   - For P component of PID
  const double ku = 100;          //  - For D component of PID
  const double tu = 10.5 / 17;    //  - For D component of PID
- const double kd = 0.1 * ku * tu;//  - For D component of PID
+ const double kd = 10;//  - For D component of PID
 int L_motorSpeed;
 int R_motorSpeed;
 
@@ -65,9 +67,13 @@ int red = 0;
 
 //floats to hold colour arrays
 float colourArray[] = {0,0,0};
-float whiteArray[] = {893.00,941.00,714.00};
-float blackArray[] = {412.00,624.00,394.00};
-float greyDiff[] = {481.00,317.00,320.00};
+float whiteArray[] = {928.00,908.00,766.00};
+float blackArray[] = {566.00,473.00,308.00};
+float greyDiff[] = {362.00,435.00,458.00};
+
+// float whiteArray[] = {944.00,952.00,821.00};
+// float blackArray[] = {699.00,737.00,573.00};
+// float greyDiff[] = {245.00,215.00,248.00};
 
 struct Color {
   String name;
@@ -78,11 +84,12 @@ struct Color {
 };
 
 Color colors[] = {
-  {"Red", 1, 224, 74, 68},
-  {"Blue", 2, 105, 217, 232},
-  {"Green", 3, 108, 173, 68},
-  {"Orange", 4, 243, 154, 86},
-  {"Purple", 5, 140, 155, 188},
+  //          R   G   B
+  {"Red", 1, 205, 119, 101},
+  {"Blue", 2, 121, 212, 225},
+  {"Green", 3, 100, 169, 109},
+  {"Orange", 4, 195, 157, 110},
+  {"Purple", 5, 137, 163, 188},
   {"White", 0, 255, 255, 255}
 };
 
@@ -107,7 +114,7 @@ void setup()
   // Any setup code here runs only once:
   led.setpin(13);
   pinMode(MUSIC_PIN, OUTPUT);
-  Serial.begin(9600);
+  // Serial.begin(9600);
   // pinMode(A7, INPUT); // Setup A7 as input for the push button
   led.setColor(128, 255, 0); // set LED to Green
 
@@ -152,7 +159,7 @@ void loop()
       int color = classify_color();
       // Serial.println("Executing Waypoint");
       execute_waypoint(color);
-      delay(100);
+      
       
       
     }
@@ -171,7 +178,7 @@ void loop()
       status = !status; // Toggle status
       delay(500); // Delay 500ms so that a button push won't be counted multiple times.
     }
-  delay(1);
+  // delay(1);
   }  
 }
 
@@ -242,13 +249,13 @@ void pd_control() {
 void ultrasound() {
 
   dist = ultraSensor.distanceCm();
-  if (dist > 14)
+  if (dist > SIDE_MAX)
   {
 
     dist = OUT_OF_RANGE;
   }
   
-  //Serial.println(dist);
+  // Serial.println(dist);
 }
 
 /**
@@ -257,6 +264,7 @@ void ultrasound() {
  */
 bool on_line() {
   sensorState = lineFinder.readSensors();
+
   if (sensorState != S1_OUT_S2_OUT) {
     return true;
   }
@@ -342,7 +350,7 @@ int classify_color() {
         classified = colors[i].id;
       }
     }
-      Serial.println("Classified as: " + classifiedColor);
+      // Serial.println("Classified as: " + classifiedColor);
     return classified;
 }
 
@@ -362,19 +370,19 @@ void execute_waypoint(const int color)
     // code block for red
     led.setColor(255, 0, 0); // set Right LED to Red
     led.show();
-    turnLeft(TIME_FOR_TURN);
+    turnLeft(TIME_FOR_LEFT_TURN);
     break;
   case 2:
     // code block for blue
     led.setColor(0, 0, 255); // set Right LED to Red
     led.show();
-    doubleRight();
+    doubleRight(TIME_FOR_1_GRID_B);
     break;
   case 3:
     // code block for green
     led.setColor(0, 255, 0); // set Right LED to Red
     led.show();
-    turnRight(TIME_FOR_TURN);
+    turnRight(TIME_FOR_RIGHT_TURN);
     break;
   case 4: 
     // code block for orange
@@ -386,7 +394,7 @@ void execute_waypoint(const int color)
     // code block for purple
     led.setColor(153, 51, 255); // set Right LED to Red
     led.show();
-    doubleLeft();
+    doubleLeft(TIME_FOR_1_GRID);
     break;
   default:
     // code block for black or no color classified
@@ -396,36 +404,41 @@ void execute_waypoint(const int color)
   }
 }
 
-void forwardGrid() {
+void forwardGrid(int time) {
   leftWheel.run(-MOTORSPEED);
   rightWheel.run(MOTORSPEED);
-  delay(TIME_FOR_1_GRID);
+  delay(time);
   stopMove();
 }
 
-void turnRight(int speed) {
+void turnRight(int time) {
   leftWheel.run(-MOTORSPEED);
   rightWheel.run(-MOTORSPEED);
-  delay(speed);
+  delay(time);
   stopMove();
 }
 
-void turnLeft(int speed) {
+void turnLeft(int time) {
   leftWheel.run(MOTORSPEED);
   rightWheel.run(MOTORSPEED);
-  delay(speed);
+  delay(time);
   stopMove();
 }
 
-void doubleRight() {
-  turnRight(TIME_FOR_TURN);
-  forwardGrid();
+void doubleRight(int time) {
+  turnRight(TIME_FOR_RIGHT_TURN);
+  delay(10);
+  forwardGrid(time);
+  delay(100);
   turnRight(TIME_FOR_SECOND_RIGHT_TURN);
+
 }
 
-void doubleLeft() {
-  turnLeft(TIME_FOR_TURN);
-  forwardGrid();
+void doubleLeft(int time) {
+  turnLeft(TIME_FOR_LEFT_TURN);
+  delay(10);
+  forwardGrid(time);
+  delay(100);
   turnLeft(TIME_FOR_SECOND_LEFT_TURN);
 }
 

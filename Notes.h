@@ -94,6 +94,14 @@
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
 
+// CDE (C3)             [3]
+// EGA A                [3]
+// (EDCC) (E4 D4 C4 C4) [4]
+
+// AG AGEDC           [3]
+// [G]CD DCD          [2]
+
+
 static int music_key[] = {
     NOTE_E7, NOTE_E7
     // , 0, NOTE_E7, 

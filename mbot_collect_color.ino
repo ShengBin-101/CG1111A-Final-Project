@@ -64,9 +64,13 @@ int red = 0;
 
 //floats to hold colour arrays
 float colourArray[] = {0,0,0};
-float whiteArray[] = {893.00,941.00,714.00};
-float blackArray[] = {412.00,624.00,394.00};
-float greyDiff[] = {481.00,317.00,320.00};
+float whiteArray[] = {928.00,908.00,766.00};
+float blackArray[] = {566.00,473.00,308.00};
+float greyDiff[] = {362.00,435.00,458.00};
+
+// float whiteArray[] = {944.00,952.00,821.00};
+// float blackArray[] = {699.00,737.00,573.00};
+// float greyDiff[] = {245.00,215.00,248.00};
 
 // Before 6 Nov
 // float whiteArray[] = {919.00,934.00,760.00};
