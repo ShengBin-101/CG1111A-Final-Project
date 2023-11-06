@@ -27,9 +27,9 @@ MeBuzzer                  buzzer;
 
 // Movement
 #define MOTORSPEED                  255
-#define SIDE_MAX                    14 // side distance threshold in cm
-#define TIME_FOR_1_GRID             660 // TO BE TESTED
-#define TIME_FOR_1_GRID_B           700 // TO BE TESTED
+#define SIDE_MAX                    16 // side distance threshold in cm
+#define TIME_FOR_1_GRID             680 // TO BE TESTED
+#define TIME_FOR_1_GRID_B           750 // TO BE TESTED
 #define TIME_FOR_LEFT_TURN          340 // The time duration (ms) for turning 90 degrees
 #define TIME_FOR_RIGHT_TURN         345 // The time duration (ms) for turning 90 degrees
 #define TIME_FOR_SECOND_LEFT_TURN   340
@@ -37,8 +37,8 @@ MeBuzzer                  buzzer;
 #define TIME_FOR_UTURN              600
 
 /********** Variables for PID Controller **********/
-const double kp = 25;              //   - For P component of PID
-const double kd = 10;              //  - For D component of PID
+const double kp = 20; //25              //   - For P component of PID
+const double kd = 18; //20             //  - For D component of PID
 int L_motorSpeed;
 int R_motorSpeed;
 
@@ -303,7 +303,7 @@ void read_color() {
     }
     delay(RGBWait);
     //get the average of 5 consecutive readings for the current colour and return an average 
-    colourArray[c] = getAvgReading(5);
+    colourArray[c] = getAvgReading(2);
     //the average reading returned minus the lowest value divided by the maximum possible range, multiplied by 255 will give a value between 0-255, representing the value for the current reflectivity (i.e. the colour LDR is exposed to)
     int result = (colourArray[c] - blackArray[c])/(greyDiff[c])*255;
     if (result > 255) {
