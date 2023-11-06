@@ -1,7 +1,6 @@
 #include "Wire.h"
 #include "MeMCore.h"
 #include "MeRGBLed.h"
-#include "Notes.h"
 
 /********** Define Ports **********/
 #define MUSIC_PIN         8
@@ -65,9 +64,13 @@ int red = 0;
 
 //floats to hold colour arrays
 float colourArray[] = {0,0,0};
-float whiteArray[] = {893.00,941.00,714.00};
-float blackArray[] = {412.00,624.00,394.00};
-float greyDiff[] = {481.00,317.00,320.00};
+float whiteArray[] = {928.00,908.00,766.00};
+float blackArray[] = {566.00,473.00,308.00};
+float greyDiff[] = {362.00,435.00,458.00};
+
+// float whiteArray[] = {944.00,952.00,821.00};
+// float blackArray[] = {699.00,737.00,573.00};
+// float greyDiff[] = {245.00,215.00,248.00};
 
 // Before 6 Nov
 // float whiteArray[] = {919.00,934.00,760.00};
@@ -174,8 +177,6 @@ void loop()
     {
       led.setColor(255, 0, 0); // set Right LED to Red
       led.show();
-      stopMove();
-      finishMaze();
       stop = false;
     }
     
@@ -259,21 +260,8 @@ void ultrasound() {
 
     dist = OUT_OF_RANGE;
   }
-  // pinMode(ULTRASONIC, OUTPUT);
-  // digitalWrite(ULTRASONIC, LOW);
-  // delayMicroseconds(2);
-  // digitalWrite(ULTRASONIC, HIGH);
-  // delayMicroseconds(10);
-  // digitalWrite(ULTRASONIC, LOW);
-  // pinMode(ULTRASONIC, INPUT);
-
-  // long duration = pulseIn(ULTRASONIC, HIGH, TIMEOUT);
-  // if (duration > 0) {
-  //   dist = duration / 2.0 / 1000000 * SPEED_OF_SOUND * 100;
-  // } else {
-  //   dist = OUT_OF_RANGE;
-  // }
-  Serial.println(dist);
+  
+  //Serial.println(dist);
 }
 
 /**
@@ -344,7 +332,7 @@ void read_color() {
     Serial.println(int(colourArray[c])); //show the value for the current colour LED, which corresponds to either the R, G or B of the RGB code
   } 
 
-}
+}\
 
 int classify_color() {
   // turn on one colour at a time and LDR reads 5 times
@@ -462,97 +450,39 @@ void execute_waypoint(const int color)
   switch(color) {
   case 0:
     // code block for white
-    stop = true;
-    status = false;
+    led.setColor(255, 255, 255); // set Right LED to Red
+    led.show();
+    
     break;
   case 1:
     // code block for red
     led.setColor(255, 0, 0); // set Right LED to Red
     led.show();
-    turnLeft(TIME_FOR_TURN);
     break;
   case 2:
     // code block for blue
     led.setColor(0, 0, 255); // set Right LED to Red
     led.show();
-    doubleRight();
     break;
   case 3:
     // code block for green
     led.setColor(0, 255, 0); // set Right LED to Red
     led.show();
-    turnRight(TIME_FOR_TURN);
     break;
   case 4: 
     // code block for orange
     led.setColor(153, 76, 0); // set Right LED to Red
     led.show();
-    uTurn();
     break;
   case 5:
     // code block for purple
     led.setColor(153, 51, 255); // set Right LED to Red
     led.show();
-    doubleLeft();
     break;
   default:
     // code block for black or no color classified
     led.setColor(0, 0, 0); // set Right LED to Red
     led.show();
     break;
-  }
-}
-
-void forwardGrid() {
-  leftWheel.run(-MOTORSPEED);
-  rightWheel.run(MOTORSPEED);
-  delay(TIME_FOR_1_GRID);
-  stopMove();
-}
-
-void turnRight(int speed) {
-  leftWheel.run(-MOTORSPEED);
-  rightWheel.run(-MOTORSPEED);
-  delay(speed);
-  stopMove();
-}
-
-void turnLeft(int speed) {
-  leftWheel.run(MOTORSPEED);
-  rightWheel.run(MOTORSPEED);
-  delay(speed);
-  stopMove();
-}
-
-void doubleRight() {
-  turnRight(TIME_FOR_TURN);
-  forwardGrid();
-  turnRight(TIME_FOR_SECOND_RIGHT_TURN);
-}
-
-void doubleLeft() {
-  turnLeft(TIME_FOR_TURN);
-  forwardGrid();
-  turnLeft(TIME_FOR_SECOND_LEFT_TURN);
-}
-
-void uTurn() {
-  turnRight(TIME_FOR_UTURN);
-}
-
-/**
- * To be executed when maze is completed (ie. White Coloured Paper Detected).
- * This function plays a music tune of our choice.
- */
-void finishMaze() {
-  // keys and durations found in NOTES.h
-  for (int i = 0; i < sizeof(music_key) / sizeof(int); ++i) {
-    // quarter note = 1000 / 4, eighth note = 1000/8, etc. (Assuming 1 beat per sec)
-    const int duration = 1000 / music_duration[i];
-    buzzer.tone(MUSIC_PIN, music_key[i], duration);
-
-    // to distinguish notes
-    delay(duration * 1.30);
-    buzzer.noTone(MUSIC_PIN);
   }
 }
