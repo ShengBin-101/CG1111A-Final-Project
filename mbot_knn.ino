@@ -20,28 +20,25 @@ MeBuzzer                  buzzer;
 #define LDRWait 20 //in milliseconds 
 /********** Constants **********/
 // Ultrasound
-#define TIMEOUT           2000 // Max microseconds to wait; choose according to max distance of wall
-#define SPEED_OF_SOUND    340 // Update according to your own experimen
+
+// #define TIMEOUT           2000 // Max microseconds to wait; choose according to max distance of wall
+// #define SPEED_OF_SOUND    340 
 #define OUT_OF_RANGE      100
 
 // Movement
-#define MOTORSPEED        255
-#define TURNING_TIME_MS   (75000/MOTORSPEED) // The time duration (ms) for turning 90 degrees
-#define TIMEDELAY         20 // delay time before checking colour of waypoint
-#define SIDE_MAX          14 // side distance threshold in cm
-#define TIME_FOR_1_GRID   660 // TO BE TESTED
-#define TIME_FOR_1_GRID_B   700 // TO BE TESTED
-#define TIME_FOR_LEFT_TURN     340
-#define TIME_FOR_RIGHT_TURN    345
+#define MOTORSPEED                  255
+#define SIDE_MAX                    14 // side distance threshold in cm
+#define TIME_FOR_1_GRID             660 // TO BE TESTED
+#define TIME_FOR_1_GRID_B           700 // TO BE TESTED
+#define TIME_FOR_LEFT_TURN          340 // The time duration (ms) for turning 90 degrees
+#define TIME_FOR_RIGHT_TURN         345 // The time duration (ms) for turning 90 degrees
 #define TIME_FOR_SECOND_LEFT_TURN   340
 #define TIME_FOR_SECOND_RIGHT_TURN  340
-#define TIME_FOR_UTURN 600
+#define TIME_FOR_UTURN              600
 
 /********** Variables for PID Controller **********/
-const double kp = 25;            //   - For P component of PID
- const double ku = 100;          //  - For D component of PID
- const double tu = 10.5 / 17;    //  - For D component of PID
- const double kd = 10;//  - For D component of PID
+const double kp = 25;              //   - For P component of PID
+const double kd = 10;              //  - For D component of PID
 int L_motorSpeed;
 int R_motorSpeed;
 
@@ -54,8 +51,17 @@ double error_delta;    // - For D component of PID
 
 /********** Color Detection Parameters - To be updated from coloudcalibration.ino file after calibration **********/
 // Define colour sensor LED pins
-int ledArray[] = { A2, A3 };
-int truth[][2] = { { 0, 1 }, { 1, 0 }, { 1, 1 } };
+int ledArray[2] = { A2, A3 };
+
+// Truth Table for LEDs Control:
+int truth[3][2] =  { { 0, 1 },   // Blue LED ON 
+                    { 1, 0 },   // Green LED ON
+                    { 1, 1 }    // Red LED ON
+                  };
+
+int ir_state[2][2] = { { 0, 0 }, // IR Emitter ON
+                    { 1, 1}   // IR Emitter OFF
+                  };
 
 char colourStr[3][5] = {"B = ", "G = ", "R = "};
 
@@ -71,10 +77,6 @@ float whiteArray[] = {928.00,908.00,766.00};
 float blackArray[] = {566.00,473.00,308.00};
 float greyDiff[] = {362.00,435.00,458.00};
 
-// float whiteArray[] = {944.00,952.00,821.00};
-// float blackArray[] = {699.00,737.00,573.00};
-// float greyDiff[] = {245.00,215.00,248.00};
-
 struct Color {
   String name;
   int id; // 0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - unknown
@@ -84,15 +86,14 @@ struct Color {
 };
 
 Color colors[] = {
-  //          R   G   B
-  {"Red", 1, 205, 119, 101},
-  {"Blue", 2, 121, 212, 225},
-  {"Green", 3, 100, 169, 109},
-  {"Orange", 4, 195, 157, 110},
-  {"Purple", 5, 137, 163, 188},
-  {"White", 0, 255, 255, 255}
+  //  Label -   id - R  -  G  -  B
+  {   "Red",    1,  220,  130,  101},
+  {   "Blue",   2,  130,  212,  225},
+  {   "Green",  3,  120,  169,  128},
+  {   "Orange", 4,  195,  157,  110},
+  {   "Purple", 5,  137,  163,  188},
+  {   "White",  0,  255,  255,  255}  
 };
-
 
 /********** Global Variables **********/
 bool stop = false;    // global ; 0 = haven't reach end of maze, 1 = reach end of maze, stop all motor and play buzzer
@@ -111,56 +112,56 @@ void finishWaypoint(void);
 /********** Setup & Loop **********/
 void setup()
 {
-  // Any setup code here runs only once:
   led.setpin(13);
   pinMode(MUSIC_PIN, OUTPUT);
-  // Serial.begin(9600);
-  // pinMode(A7, INPUT); // Setup A7 as input for the push button
-  led.setColor(128, 255, 0); // set LED to Green
-
-  led.show();
+  pinMode(A7, INPUT); // Setup A7 as input for the push button
   for(int c = 0;c < 2;c++){
     pinMode(ledArray[c],OUTPUT);  
   }
   for (int zz = 0; zz < 2; zz++) {
     digitalWrite(ledArray[zz], 0);
   }
+  // Serial.begin(9600);
 
-  delay(2000); // Do nothing for 10000 ms = 10 seconds
+  // setup complete
+  led.setColor(128, 255, 0); // set LED to Green 
+  led.show();
+
+  delay(2000); // Do nothing for 1000 ms = 1 second
 }
 
 void loop()
 {
   if (status == true) { // run mBot only if status is 1
-    ultrasound(); // updates global variable dist 
-    // if (!on_line()) { // situation 1
+    // update global variable dist
+    ultrasound();  
+    
     if (!on_line()) {
+      // check for presence of wall
       if (dist!= OUT_OF_RANGE)
       {
+        // wall present, run pd_control
         led.setColor(255, 255, 255);
         led.show();
         pd_control();
-        // delay(50);
       }
       else
       {
+        // no wall detected, move straight
         led.setColor(0, 255, 255);
         led.show();
-        // no wall detected, try to move straight
         move(MOTORSPEED, 240);
       }
     }
     else{
       // Serial.println("Stopping");
       stopMove();
-      Serial.println("Reading Colour");
+      // Serial.println("Reading Colour");
       read_color();
       // Serial.println("Classifying Color");
       int color = classify_color();
       // Serial.println("Executing Waypoint");
       execute_waypoint(color);
-      
-      
       
     }
   }
@@ -178,7 +179,6 @@ void loop()
       status = !status; // Toggle status
       delay(500); // Delay 500ms so that a button push won't be counted multiple times.
     }
-  // delay(1);
   }  
 }
 
@@ -247,14 +247,11 @@ void pd_control() {
  * ultrasonic sensor and the closest object (wall) to it. Sets dist to OUT_OF_RANGE if out of range.
  */
 void ultrasound() {
-
   dist = ultraSensor.distanceCm();
   if (dist > SIDE_MAX)
   {
-
     dist = OUT_OF_RANGE;
   }
-  
   // Serial.println(dist);
 }
 
@@ -264,7 +261,6 @@ void ultrasound() {
  */
 bool on_line() {
   sensorState = lineFinder.readSensors();
-
   if (sensorState != S1_OUT_S2_OUT) {
     return true;
   }
@@ -299,23 +295,21 @@ int getAvgReading(int times) {
 void read_color() {
   // turn on one colour at a time and LDR reads 5 times
 //turn on one colour at a time and LDR reads 5 times
-  for(int c = 0;c <= 2;c++){    
+  for(int c = 0; c <= 2; c++){    
     Serial.print(colourStr[c]);
     // TURN ON LIGHT
     for (int zz = 0; zz < 2; zz++) {
       digitalWrite(ledArray[zz], truth[c][zz]);
     }
     delay(RGBWait);
-//get the average of 5 consecutive readings for the current colour and return an average 
+    //get the average of 5 consecutive readings for the current colour and return an average 
     colourArray[c] = getAvgReading(5);
-//the average reading returned minus the lowest value divided by the maximum possible range, multiplied by 255 will give a value between 0-255, representing the value for the current reflectivity (i.e. the colour LDR is exposed to)
+    //the average reading returned minus the lowest value divided by the maximum possible range, multiplied by 255 will give a value between 0-255, representing the value for the current reflectivity (i.e. the colour LDR is exposed to)
     int result = (colourArray[c] - blackArray[c])/(greyDiff[c])*255;
-    if (result > 255)
-    {
+    if (result > 255) {
       result = 255;
     }
-    else if (result < 0)
-    {
+    else if (result < 0) {
       result = 0;
     }
     colourArray[c] = result;
@@ -338,20 +332,19 @@ int classify_color() {
   red = colourArray[2];
   
   // Calculate Euclidean distances for each known color
-    double minDistance = 9999;  // Initialize with a large value
-    String classifiedColor;
+  double minDistance = 9999;  // Initialize with a large value
+  String classifiedColor;
 
-    for (int i = 0; i < 6; i++) { // 6 is the number of known colors
-      double distance = sqrt(pow(colors[i].red - red, 2) + pow(colors[i].green - green, 2) + pow(colors[i].blue - blue, 2));
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        classifiedColor = colors[i].name;
-        classified = colors[i].id;
-      }
+  for (int i = 0; i < 6; i++) { // 6 is the number of known colors
+    double distance = sqrt(pow(colors[i].red - red, 2) + pow(colors[i].green - green, 2) + pow(colors[i].blue - blue, 2));
+    if (distance < minDistance) {
+      minDistance = distance;
+      classifiedColor = colors[i].name;
+      classified = colors[i].id;
     }
-      // Serial.println("Classified as: " + classifiedColor);
-    return classified;
+  }
+    // Serial.println("Classified as: " + classifiedColor);
+  return classified;
 }
 
 /********** Functions (Waypoints) **********/
