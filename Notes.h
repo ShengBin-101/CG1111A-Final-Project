@@ -94,81 +94,30 @@
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
 
-// CDE (C3)             [3]
-// EGA A                [3]
-// (EDCC) (E4 D4 C4 C4) [4]
-
-// AG AGEDC           [3]
-// [G]CD DCD          [2]
-
-
 static int music_key[] = {
-    NOTE_E7, NOTE_E7
-    // , 0, NOTE_E7, 
-    // 0, NOTE_C7, NOTE_E7, 0,
-    // NOTE_G7, 0, 0,  0,
-    // NOTE_G6, 0, 0, 0, 
 
-    // NOTE_C7, 0, 0, NOTE_G6, 
-    // 0, 0, NOTE_E6, 0, 
-    // 0, NOTE_A6, 0, NOTE_B6, 
-    // 0, NOTE_AS6, NOTE_A6, 0, 
+  NOTE_C3, NOTE_D3, NOTE_E3, NOTE_E3, 
+  NOTE_G3, NOTE_A3, NOTE_A3,
 
-    // NOTE_G6, NOTE_E7, NOTE_G7, 
-    // NOTE_A7, 0, NOTE_F7, NOTE_G7, 
-    // 0, NOTE_E7, 0,NOTE_C7, 
-    // NOTE_D7, NOTE_B6, 0, 0,
+  NOTE_E4, NOTE_D4, NOTE_C4, NOTE_C4,
 
-    // NOTE_C7, 0, 0, NOTE_G6, 
-    // 0, 0, NOTE_E6, 0, 
-    // 0, NOTE_A6, 0, NOTE_B6, 
-    // 0, NOTE_AS6, NOTE_A6, 0, 
+  NOTE_A3, NOTE_G3, NOTE_A3, NOTE_G3,
+  NOTE_E3, NOTE_D3, NOTE_C3,
 
-    // NOTE_G6, NOTE_E7, NOTE_G7, 
-    // NOTE_A7, 0, NOTE_F7, NOTE_G7, 
-    // 0, NOTE_E7, 0,NOTE_C7, 
-    // NOTE_D7, NOTE_B6, 0, 0  
+  NOTE_G2, NOTE_C2, 
+  // NOTE_D2, NOTE_D2, NOTE_C2, NOTE_D2
+
 };
 static int music_duration[] = {
-    12, 12
-    // , 12, 12, 
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12, 
+  8,  8,  8,
+  8, 8, 8, 8,
 
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12, 
-    // 12, 12, 12, 12, 
-    // 12, 12, 12, 12, 
+  8, 8, 8, 8,
 
-    // 9, 9, 9,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
-  
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
+  8, 8, 8, 8,
+  8, 8, 8,
 
-    // 9, 9, 9,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
-    // 12, 12, 12, 12,
+  8, 8
+  // 6, 6, 6, 6
 };
-
-void printColour(const int colourRes) {
-  String s;
-  switch (colourRes){
-    case 0: s="black"; break;
-    case 1: s="red"; break;
-    case 2: s="green"; break;
-    case 3: s="yellow"; break;
-    case 4: s="purple"; break;
-    case 5: s="light blue"; break;
-    default: s="not found"; break;
-  }
-  Serial.println(s);
-}
-
 #endif

@@ -7,6 +7,7 @@
 #define MUSIC_PIN         8
 #define ULTRASONIC        12
 #define LDR               A0
+#define IR                A1
 MeDCMotor                 leftWheel(M1);        // assigning LeftMotor to port M1
 MeDCMotor                 rightWheel(M2);       // assigning RightMotor to port M2
 MeLineFollower            lineFinder(PORT_2);
@@ -15,6 +16,9 @@ MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
 // Define time delay before the next RGB colour turns ON to allow LDR to stabilize
 #define RGBWait 80 //in milliseconds 
+
+// Define time delay before taking IR reading
+#define IRWait 20 //in milliseconds 
 
 // Define time delay before taking another LDR reading
 #define LDRWait 20 //in milliseconds 
@@ -37,8 +41,8 @@ MeBuzzer                  buzzer;
 #define TIME_FOR_UTURN              600
 
 /********** Variables for PID Controller **********/
-const double kp = 20; //25              //   - For P component of PID
-const double kd = 18; //20             //  - For D component of PID
+const double kp = 30; //25              //   - For P component of PID
+const double kd = 14; //20             //  - For D component of PID
 int L_motorSpeed;
 int R_motorSpeed;
 
@@ -100,7 +104,7 @@ bool stop = false;    // global ; 0 = haven't reach end of maze, 1 = reach end o
 bool status = false;  // global status; 0 = do nothing, 1 = mBot runs
 int sensorState;      // to keep track of whether waypoint is detected (ie. black line detected by line follower)
 double dist;          // to keep track of distance between wall and ultrasound sensor
-
+int ambientIR;  
 /********** Function Declarations **********/
 void stopMove(const int i);
 void turnLeft(void);
@@ -115,14 +119,18 @@ void setup()
   led.setpin(13);
   pinMode(MUSIC_PIN, OUTPUT);
   pinMode(A7, INPUT); // Setup A7 as input for the push button
+  pinMode(IR, INPUT);
+
+
   for(int c = 0;c < 2;c++){
     pinMode(ledArray[c],OUTPUT);  
   }
+  
   for (int zz = 0; zz < 2; zz++) {
     digitalWrite(ledArray[zz], 0);
   }
   // Serial.begin(9600);
-
+  updateAmbient();
   // setup complete
   led.setColor(128, 255, 0); // set LED to Green 
   led.show();
@@ -134,10 +142,14 @@ void loop()
 {
   if (status == true) { // run mBot only if status is 1
     // update global variable dist
-    ultrasound();  
-    
+    ultrasound();
+    // check distance from wall on right (nudge left if we determine robot is too close to wall on right)  
+    checkRight();
+
+    // check if on black line
     if (!on_line()) {
-      // check for presence of wall
+      // check for presence of wall based on ultrasound dist
+      
       if (dist!= OUT_OF_RANGE)
       {
         // wall present, run pd_control
@@ -162,7 +174,7 @@ void loop()
       int color = classify_color();
       // Serial.println("Executing Waypoint");
       execute_waypoint(color);
-      
+      updateAmbient();
     }
   }
   else{
@@ -180,6 +192,44 @@ void loop()
       delay(500); // Delay 500ms so that a button push won't be counted multiple times.
     }
   }  
+}
+
+// function updates voltage value for ambient IR
+void updateAmbient(){
+  digitalWrite(A2, 1);
+  digitalWrite(A3, 1);
+  delay(IRWait);
+  ambientIR = analogRead(IR);
+  // Serial.print("Ambient: ");
+  // Serial.println(ambientIR);
+}
+
+void checkRight() {
+  // Take raw value and threshold
+  digitalWrite(A2, 0);
+  digitalWrite(A3, 0);
+  delay(IRWait);
+  int irVolt = analogRead(IR);
+  digitalWrite(A2, 1);
+  digitalWrite(A3, 1);
+  // Serial.print("Measured: ");
+  // Serial.println(irVolt);
+  int difference = ambientIR - irVolt;
+  // Serial.print("Difference: ");
+  // Serial.println(difference);
+  if (difference > 450)
+  {
+    led.setColor(0, 0, 255); // set Right LED to Red
+    led.show();
+    // nudge left
+    move(70,255);
+    delay(100);
+  }
+  else
+  {
+    led.setColor(255, 255, 255); // set Right LED to White
+    led.show();
+  }
 }
 
 /********** Functions (Movement) **********/
