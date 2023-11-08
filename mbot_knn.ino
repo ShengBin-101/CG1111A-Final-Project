@@ -15,7 +15,7 @@ MeUltrasonicSensor        ultraSensor(PORT_1);
 MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
 // Define time delay before the next RGB colour turns ON to allow LDR to stabilize
-#define RGBWait 80 //in milliseconds 
+#define RGBWait 60 //in milliseconds 
 
 // Define time delay before taking IR reading
 #define IRWait 20 //in milliseconds 
@@ -27,26 +27,26 @@ MeBuzzer                  buzzer;
 
 // #define TIMEOUT           2000 // Max microseconds to wait; choose according to max distance of wall
 // #define SPEED_OF_SOUND    340 
-#define OUT_OF_RANGE      100
+#define OUT_OF_RANGE          100
 
 // Movement
 #define MOTORSPEED                  255
-#define SIDE_MAX                    16 // side distance threshold in cm
-#define TIME_FOR_1_GRID             680 // TO BE TESTED
-#define TIME_FOR_1_GRID_B           750 // TO BE TESTED
-#define TIME_FOR_LEFT_TURN          340 // The time duration (ms) for turning 90 degrees
-#define TIME_FOR_RIGHT_TURN         345 // The time duration (ms) for turning 90 degrees
-#define TIME_FOR_SECOND_LEFT_TURN   340
-#define TIME_FOR_SECOND_RIGHT_TURN  340
-#define TIME_FOR_UTURN              600
+#define SIDE_MAX                    18 // side distance threshold in cm
+#define TIME_FOR_1_GRID_PURPLE      680 
+#define TIME_FOR_1_GRID_BLUE        750 
+#define TIME_FOR_LEFT_TURN          315 // The time duration (ms) for turning 90 degrees
+#define TIME_FOR_RIGHT_TURN         310 // The time duration (ms) for turning 90 degrees
+#define TIME_FOR_SECOND_LEFT_TURN   330
+#define TIME_FOR_SECOND_RIGHT_TURN  320
+#define TIME_FOR_UTURN              560
 
 /********** Variables for PID Controller **********/
-const double kp = 30; //25              //   - For P component of PID
-const double kd = 14; //20             //  - For D component of PID
+const double kp = 20; //20 //25              //   - For P component of PID
+const double kd = 20; //20 //20             //  - For D component of PID
 int L_motorSpeed;
 int R_motorSpeed;
 
-const double desired_dist = 10.5; // desired distance between ultrasound sensor and wall to keep mBot centered in tile
+const double desired_dist = 10.75; // desired distance between ultrasound sensor and wall to keep mBot centered in tile
 double error;
 double correction_dble; //  - For calculation for correction
 int correction;         //  - To be used as input to motor
@@ -58,13 +58,13 @@ double error_delta;    // - For D component of PID
 int ledArray[2] = { A2, A3 };
 
 // Truth Table for LEDs Control:
-int truth[3][2] =  { { 0, 1 },   // Blue LED ON 
-                    { 1, 0 },   // Green LED ON
-                    { 1, 1 }    // Red LED ON
+int truth[3][2] =  { { 0, 1 },    // Blue LED ON 
+                    { 1, 0 },     // Green LED ON
+                    { 1, 1 }      // Red LED ON
                   };
 
-int ir_state[2][2] = { { 0, 0 }, // IR Emitter ON
-                    { 1, 1}   // IR Emitter OFF
+int ir_state[2][2] = { { 0, 0 },  // IR Emitter ON
+                    { 1, 1}       // IR Emitter OFF (same as Red LED ON)
                   };
 
 char colourStr[3][5] = {"B = ", "G = ", "R = "};
@@ -91,10 +91,10 @@ struct Color {
 
 Color colors[] = {
   //  Label -   id - R  -  G  -  B
-  {   "Red",    1,  220,  130,  101},
+  {   "Red",    1,  220,  130,  135},
   {   "Blue",   2,  130,  212,  225},
-  {   "Green",  3,  120,  169,  128},
-  {   "Orange", 4,  195,  157,  110},
+  {   "Green",  3,  130,  169,  128},
+  {   "Orange", 4,  195,  170,  120},
   {   "Purple", 5,  137,  163,  188},
   {   "White",  0,  255,  255,  255}  
 };
@@ -130,7 +130,7 @@ void setup()
     digitalWrite(ledArray[zz], 0);
   }
   // Serial.begin(9600);
-  updateAmbient();
+  
   // setup complete
   led.setColor(128, 255, 0); // set LED to Green 
   led.show();
@@ -143,13 +143,13 @@ void loop()
   if (status == true) { // run mBot only if status is 1
     // update global variable dist
     ultrasound();
-    // check distance from wall on right (nudge left if we determine robot is too close to wall on right)  
-    checkRight();
-
+    // check distance from
+    
+     //wall on right (nudge left if we determine robot is too close to wall on right)  
     // check if on black line
     if (!on_line()) {
       // check for presence of wall based on ultrasound dist
-      
+      // checkRight();
       if (dist!= OUT_OF_RANGE)
       {
         // wall present, run pd_control
@@ -159,6 +159,7 @@ void loop()
       }
       else
       {
+        checkRight();
         // no wall detected, move straight
         led.setColor(0, 255, 255);
         led.show();
@@ -174,7 +175,7 @@ void loop()
       int color = classify_color();
       // Serial.println("Executing Waypoint");
       execute_waypoint(color);
-      updateAmbient();
+      // updateAmbient();
     }
   }
   else{
@@ -188,6 +189,7 @@ void loop()
     }
     
     if (analogRead(A7) < 100) { // If push button is pushed
+      // updateAmbient();
       status = !status; // Toggle status
       delay(500); // Delay 500ms so that a button push won't be counted multiple times.
     }
@@ -200,8 +202,8 @@ void updateAmbient(){
   digitalWrite(A3, 1);
   delay(IRWait);
   ambientIR = analogRead(IR);
-  // Serial.print("Ambient: ");
-  // Serial.println(ambientIR);
+  Serial.print("Ambient: ");
+  Serial.println(ambientIR);
 }
 
 void checkRight() {
@@ -212,18 +214,20 @@ void checkRight() {
   int irVolt = analogRead(IR);
   digitalWrite(A2, 1);
   digitalWrite(A3, 1);
-  // Serial.print("Measured: ");
-  // Serial.println(irVolt);
+  // delay(IRWait);
+  Serial.print("Measured: ");
+  Serial.println(irVolt);
   int difference = ambientIR - irVolt;
-  // Serial.print("Difference: ");
-  // Serial.println(difference);
-  if (difference > 450)
+  Serial.print("Difference: ");
+  Serial.println(difference);
+  updateAmbient();
+  if (difference > 480)
   {
     led.setColor(0, 0, 255); // set Right LED to Red
     led.show();
     // nudge left
-    move(70,255);
-    delay(100);
+    move(215,255);
+    delay(3);
   }
   else
   {
@@ -353,7 +357,7 @@ void read_color() {
     }
     delay(RGBWait);
     //get the average of 5 consecutive readings for the current colour and return an average 
-    colourArray[c] = getAvgReading(2);
+    colourArray[c] = getAvgReading(1);
     //the average reading returned minus the lowest value divided by the maximum possible range, multiplied by 255 will give a value between 0-255, representing the value for the current reflectivity (i.e. the colour LDR is exposed to)
     int result = (colourArray[c] - blackArray[c])/(greyDiff[c])*255;
     if (result > 255) {
@@ -419,7 +423,7 @@ void execute_waypoint(const int color)
     // code block for blue
     led.setColor(0, 0, 255); // set Right LED to Red
     led.show();
-    doubleRight(TIME_FOR_1_GRID_B);
+    doubleRight(TIME_FOR_1_GRID_BLUE);
     break;
   case 3:
     // code block for green
@@ -437,7 +441,7 @@ void execute_waypoint(const int color)
     // code block for purple
     led.setColor(153, 51, 255); // set Right LED to Red
     led.show();
-    doubleLeft(TIME_FOR_1_GRID);
+    doubleLeft(TIME_FOR_1_GRID_PURPLE);
     break;
   default:
     // code block for black or no color classified
