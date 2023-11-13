@@ -1,9 +1,9 @@
-// File for defining constant objects and notes & celebratory music
+// Header File for defining constants for notes & celebratory music
 
 #ifndef Notes_h
 #define Notes_h
 
-/* NOTES FOR CELEBRATORY TUNE */
+/* NOTES FOR TUNE */
 #define NOTE_B0  31
 #define NOTE_C1  33
 #define NOTE_CS1 35
@@ -94,6 +94,7 @@
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
 
+// Sequence of Music Notes for Tune
 static int music_key[] = {
 
   NOTE_C3, NOTE_D3, NOTE_E3, NOTE_E3, 
@@ -108,6 +109,8 @@ static int music_key[] = {
   // NOTE_D2, NOTE_D2, NOTE_C2, NOTE_D2
 
 };
+
+// Duration for each Music Note for Tune
 static int music_duration[] = {
   8,  8,  8,
   8, 8, 8, 8,

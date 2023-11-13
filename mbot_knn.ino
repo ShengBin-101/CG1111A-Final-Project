@@ -1,10 +1,11 @@
+/********** Include Header Files **********/
 #include "Wire.h"
 #include "MeMCore.h"
 #include "MeRGBLed.h"
-#include "Notes.h"
+#include "Notes.h"    // Self-made header file to contain Victory Tune for Buzzer
 
 /********** Define Ports **********/
-#define MUSIC_PIN         8
+#define MUSIC_PIN         8                     
 #define ULTRASONIC        12
 #define LDR               A0
 #define IR                A1
@@ -14,73 +15,74 @@ MeLineFollower            lineFinder(PORT_2);
 MeUltrasonicSensor        ultraSensor(PORT_1);  
 MeRGBLed                  led(0,30);
 MeBuzzer                  buzzer;
-// Define time delay before the next RGB colour turns ON to allow LDR to stabilize
-#define RGBWait 60 //in milliseconds 
 
-// Define time delay before taking IR reading
-#define IRWait 20 //in milliseconds 
+/********** Define Delay Constants **********/
+// Define time delay constants before taking analogue readings (to let voltage stabalise)
+#define RGBWait   60    // Time delay (in ms) before taking LDR reading 
+#define IRWait    20    // Time delay (in ms) before taking IR reading 
+#define LDRWait   20    // Time delay (in ms) before taking LDR reading 
 
-// Define time delay before taking another LDR reading
-#define LDRWait 20 //in milliseconds 
 /********** Constants **********/
 // Ultrasound
-
-// #define TIMEOUT           2000 // Max microseconds to wait; choose according to max distance of wall
-// #define SPEED_OF_SOUND    340 
-#define OUT_OF_RANGE          100
+#define OUT_OF_RANGE                100
 
 // Movement
 #define MOTORSPEED                  255
-#define SIDE_MAX                    18 // side distance threshold in cm
-#define TIME_FOR_1_GRID_PURPLE      680 
-#define TIME_FOR_1_GRID_BLUE        750 
-#define TIME_FOR_LEFT_TURN          315 // The time duration (ms) for turning 90 degrees
-#define TIME_FOR_RIGHT_TURN         310 // The time duration (ms) for turning 90 degrees
-#define TIME_FOR_SECOND_LEFT_TURN   330
-#define TIME_FOR_SECOND_RIGHT_TURN  320
-#define TIME_FOR_UTURN              560
+#define SIDE_MAX                    18    // side distance threshold in cm
+#define TIME_FOR_LEFT_TURN          315   // The time duration (ms) for turning 90 degrees counter-clockwise      (for red waypoint)
+#define TIME_FOR_RIGHT_TURN         310   // The time duration (ms) for turning 90 degrees clockwise              (for green waypoint)
+#define TIME_FOR_1_GRID_PURPLE      680   // The time duration (ms) for moving forward by 1 grid                  (for purple waypoint)
+#define TIME_FOR_1_GRID_BLUE        750   // The time duration (ms) for moving forward by 1 grid                  (for blue waypoint)
+#define TIME_FOR_SECOND_LEFT_TURN   330   // The time duration (ms) for second 90 degrees counter-clockwise turn  (for purple waypoint) 
+#define TIME_FOR_SECOND_RIGHT_TURN  320   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
+#define TIME_FOR_UTURN              560   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
 
-/********** Variables for PID Controller **********/
-const double kp = 20; //20 //25              //   - For P component of PID
-const double kd = 20; //20 //20             //  - For D component of PID
-int L_motorSpeed;
+/********** Constants & Variables for PID Controller (only PD is used) **********/
+
+const double kp = 20;  //25              // Proportional Gain/Constant  (P component of PID)
+const double kd = 20;  //20              // Derivative Constant         (D component of PID)
+
+// Variables to hold final motorspeed calculated for each motor
+int L_motorSpeed;                       
 int R_motorSpeed;
 
-const double desired_dist = 10.75; // desired distance between ultrasound sensor and wall to keep mBot centered in tile
-double error;
-double correction_dble; //  - For calculation for correction
-int correction;         //  - To be used as input to motor
-double prev_error = 0;  // - For D component of PID
-double error_delta;    // - For D component of PID
+const double desired_dist = 10.75;  // Desired distance between ultrasound sensor and wall to keep mBot centered in tile
+double error;                       // Difference between current position and our desired distance
+double prev_error = 0;              // Variable to store previous error, to be used to calculate change in error (For D component of PID)
+double error_delta;                 // Difference between current error and previous error (For D component of PID)
+double correction_dble;             // For calculation of correction for motors
+int correction;                     // To be used to adjust input to motor
 
-/********** Color Detection Parameters - To be updated from coloudcalibration.ino file after calibration **********/
-// Define colour sensor LED pins
+/********** Color Detection Parameters **********/
+// Pins controlling 2-4 Decoder
 int ledArray[2] = { A2, A3 };
 
-// Truth Table for LEDs Control:
-int truth[3][2] =  { { 0, 1 },    // Blue LED ON 
-                    { 1, 0 },     // Green LED ON
-                    { 1, 1 }      // Red LED ON
-                  };
+// Truth Table to control 2-4 Decoder (for LED Control):
+int truth[3][2] =  { { 0, 1 },      // Blue LED ON 
+                     { 1, 0 },      // Green LED ON
+                     { 1, 1 }       // Red LED ON
+                   };
 
 int ir_state[2][2] = { { 0, 0 },  // IR Emitter ON
-                    { 1, 1}       // IR Emitter OFF (same as Red LED ON)
-                  };
+                       { 1, 1}       // IR Emitter OFF (same as Red LED ON)
+                     };
 
-char colourStr[3][5] = {"B = ", "G = ", "R = "};
+char colourStr[3][5] = {"B = ", "G = ", "R = "};  // 
 
-int color; // colour detected [0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - black]
+int color; // to store classified color [0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - black]
 
-int blue = 0;
-int green = 0;
-int red = 0;
+// variables to store measured intensity for each color
+int measured_blue = 0;
+int measured_green = 0;
+int measured_red = 0;
 
-//floats to hold colour arrays
+//floats to store calibrated values for color arrays
 float colourArray[] = {0,0,0};
 float whiteArray[] = {928.00,908.00,766.00};
 float blackArray[] = {566.00,473.00,308.00};
 float greyDiff[] = {362.00,435.00,458.00};
 
+// struct to create class for each label for color classification
 struct Color {
   String name;
   int id; // 0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - unknown
@@ -89,6 +91,7 @@ struct Color {
   uint8_t blue;
 };
 
+// dataset for each color to be used in KNN classification, average of all collected samples
 Color colors[] = {
   //  Label -   id - R  -  G  -  B
   {   "Red",    1,  220,  130,  135},
@@ -100,11 +103,12 @@ Color colors[] = {
 };
 
 /********** Global Variables **********/
-bool stop = false;    // global ; 0 = haven't reach end of maze, 1 = reach end of maze, stop all motor and play buzzer
-bool status = false;  // global status; 0 = do nothing, 1 = mBot runs
-int sensorState;      // to keep track of whether waypoint is detected (ie. black line detected by line follower)
+bool stop = false;    // variable to tell mBot to halt, used for white waypoint (end of maze) [0 = haven't reach end of maze, 1 = reach end of maze, stop all motor and play buzzer]
+bool status = false;  // variable to tell mBot when to start maze solving algorithm, used to run mBot after pressing button [0 = do nothing, 1 = mBot runs]
+int sensorState;      // to keep track of whether black line is detected by line follower
 double dist;          // to keep track of distance between wall and ultrasound sensor
-int ambientIR;  
+int ambientIR;        // to keep track of measured analog voltage for ambient IR  
+
 /********** Function Declarations **********/
 void stopMove(const int i);
 void turnLeft(void);
@@ -143,13 +147,9 @@ void loop()
   if (status == true) { // run mBot only if status is 1
     // update global variable dist
     ultrasound();
-    // check distance from
-    
-     //wall on right (nudge left if we determine robot is too close to wall on right)  
     // check if on black line
     if (!on_line()) {
       // check for presence of wall based on ultrasound dist
-      // checkRight();
       if (dist!= OUT_OF_RANGE)
       {
         // wall present, run pd_control
@@ -159,6 +159,7 @@ void loop()
       }
       else
       {
+        // call IR to check right side (nudge left if we determine robot is too close to wall on right)  
         checkRight();
         // no wall detected, move straight
         led.setColor(0, 255, 255);
@@ -167,14 +168,15 @@ void loop()
       }
     }
     else{
-      // Serial.println("Stopping");
+      // stop all motors
       stopMove();
-      // Serial.println("Reading Colour");
+      // read color
       read_color();
-      // Serial.println("Classifying Color");
+      // classify color after reading color
       int color = classify_color();
-      // Serial.println("Executing Waypoint");
+      // execute waypoint objectives
       execute_waypoint(color);
+      // measure and update reading of ambient IR
       // updateAmbient();
     }
   }
@@ -350,7 +352,7 @@ void read_color() {
   // turn on one colour at a time and LDR reads 5 times
 //turn on one colour at a time and LDR reads 5 times
   for(int c = 0; c <= 2; c++){    
-    Serial.print(colourStr[c]);
+    // Serial.print(colourStr[c]);
     // TURN ON LIGHT
     for (int zz = 0; zz < 2; zz++) {
       digitalWrite(ledArray[zz], truth[c][zz]);
@@ -381,16 +383,16 @@ int classify_color() {
   // turn on one colour at a time and LDR reads 5 times
   // colour detected [0 - white, 1 - red, 2 - blue, 3 - green, 4 - orange, 5 - purple, 6 - black]
   int classified = 6;
-  blue = colourArray[0];
-  green = colourArray[1];
-  red = colourArray[2];
+  measured_blue = colourArray[0];
+  measured_green = colourArray[1];
+  measured_red = colourArray[2];
   
   // Calculate Euclidean distances for each known color
   double minDistance = 9999;  // Initialize with a large value
   String classifiedColor;
 
   for (int i = 0; i < 6; i++) { // 6 is the number of known colors
-    double distance = sqrt(pow(colors[i].red - red, 2) + pow(colors[i].green - green, 2) + pow(colors[i].blue - blue, 2));
+    double distance = sqrt(pow(colors[i].red - measured_red, 2) + pow(colors[i].green - measured_green, 2) + pow(colors[i].blue - measured_blue, 2));
     if (distance < minDistance) {
       minDistance = distance;
       classifiedColor = colors[i].name;
@@ -403,54 +405,62 @@ int classify_color() {
 
 /********** Functions (Waypoints) **********/
 
+/**
+ * Function takes in the color of waypoint classified by mBot and calls respective functions to move mBot to complete waypoint objective. 
+ * 
+ */
 void execute_waypoint(const int color)
 {
   switch(color) {
   case 0:
     // code block for white
-    led.setColor(255, 255, 255); // set Right LED to Red
+    led.setColor(255, 255, 255); // set both LED to WHITE
     led.show();
     stop = true;
     status = false;
     break;
   case 1:
     // code block for red
-    led.setColor(255, 0, 0); // set Right LED to Red
+    led.setColor(255, 0, 0); // set both LED to RED
     led.show();
     turnLeft(TIME_FOR_LEFT_TURN);
     break;
   case 2:
     // code block for blue
-    led.setColor(0, 0, 255); // set Right LED to Red
+    led.setColor(0, 0, 255); // set both LED to BLUE
     led.show();
     doubleRight(TIME_FOR_1_GRID_BLUE);
     break;
   case 3:
     // code block for green
-    led.setColor(0, 255, 0); // set Right LED to Red
+    led.setColor(0, 255, 0); // set both LED to GREEN
     led.show();
     turnRight(TIME_FOR_RIGHT_TURN);
     break;
   case 4: 
     // code block for orange
-    led.setColor(153, 76, 0); // set Right LED to Red
+    led.setColor(153, 76, 0); // set both LED to ORANGE
     led.show();
     uTurn();
     break;
   case 5:
     // code block for purple
-    led.setColor(153, 51, 255); // set Right LED to Red
+    led.setColor(153, 51, 255); // set both LED to PURPLE
     led.show();
     doubleLeft(TIME_FOR_1_GRID_PURPLE);
     break;
   default:
-    // code block for black or no color classified
-    led.setColor(0, 0, 0); // set Right LED to Red
+    // code block for no color classified
+    led.setColor(0, 0, 0); // set both LED to NONE
     led.show();
     break;
   }
 }
 
+/**
+ * Function moves mBot forward by a distance of approximately one tile. 
+ * 
+ */
 void forwardGrid(int time) {
   leftWheel.run(-MOTORSPEED);
   rightWheel.run(MOTORSPEED);
@@ -458,6 +468,10 @@ void forwardGrid(int time) {
   stopMove();
 }
 
+/**
+ * Function allows mBot to make a rough 90 degrees clockwise turn. 
+ * 
+ */
 void turnRight(int time) {
   leftWheel.run(-MOTORSPEED);
   rightWheel.run(-MOTORSPEED);
@@ -465,6 +479,10 @@ void turnRight(int time) {
   stopMove();
 }
 
+/**
+ * Function allows mBot to make a rough 90 degrees counter-clockwise turn. 
+ * 
+ */
 void turnLeft(int time) {
   leftWheel.run(MOTORSPEED);
   rightWheel.run(MOTORSPEED);
@@ -472,6 +490,10 @@ void turnLeft(int time) {
   stopMove();
 }
 
+/**
+ * Function . 
+ * 
+ */
 void doubleRight(int time) {
   turnRight(TIME_FOR_RIGHT_TURN);
   delay(10);
