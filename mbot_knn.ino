@@ -29,24 +29,24 @@ MeBuzzer                  buzzer;
 // Movement
 #define MOTORSPEED                  255
 #define SIDE_MAX                    18    // side distance threshold in cm
-#define TIME_FOR_LEFT_TURN          315   // The time duration (ms) for turning 90 degrees counter-clockwise      (for red waypoint)
-#define TIME_FOR_RIGHT_TURN         310   // The time duration (ms) for turning 90 degrees clockwise              (for green waypoint)
-#define TIME_FOR_1_GRID_PURPLE      670   // The time duration (ms) for moving forward by 1 grid                  (for purple waypoint)
-#define TIME_FOR_1_GRID_BLUE        750   // The time duration (ms) for moving forward by 1 grid                  (for blue waypoint)
+#define TIME_FOR_LEFT_TURN          290   // The time duration (ms) for turning 90 degrees counter-clockwise      (for red waypoint)
+#define TIME_FOR_RIGHT_TURN         280   // The time duration (ms) for turning 90 degrees clockwise              (for green waypoint)
+#define TIME_FOR_1_GRID_PURPLE      640   // The time duration (ms) for moving forward by 1 grid                  (for purple waypoint)
+#define TIME_FOR_1_GRID_BLUE        720   // The time duration (ms) for moving forward by 1 grid                  (for blue waypoint)
 #define TIME_FOR_SECOND_LEFT_TURN   320   // The time duration (ms) for second 90 degrees counter-clockwise turn  (for purple waypoint) 
-#define TIME_FOR_SECOND_RIGHT_TURN  310   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
+#define TIME_FOR_SECOND_RIGHT_TURN  300   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
 #define TIME_FOR_UTURN              560   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
 
 /********** Constants & Variables for PID Controller (only PD is used) **********/
 
-const double kp = 18;  //25              // Proportional Gain/Constant  (P component of PID)
-const double kd = 20;  //20              // Derivative Constant         (D component of PID)
+const double kp = 19;  //25              // Proportional Gain/Constant  (P component of PID)
+const double kd = 19;  //20              // Derivative Constant         (D component of PID)
 
 // Variables to hold final motorspeed calculated for each motor
 int L_motorSpeed;                       
 int R_motorSpeed;
 
-const double desired_dist = 10.75;  // Desired distance between ultrasound sensor and wall to keep mBot centered in tile
+const double desired_dist = 10.50;  // Desired distance between ultrasound sensor and wall to keep mBot centered in tile
 double error;                       // Difference between current position and our desired distance
 double prev_error = 0;              // Variable to store previous error, to be used to calculate change in error (For D component of PID)
 double error_delta;                 // Difference between current error and previous error (For D component of PID)
@@ -374,7 +374,7 @@ void read_color() {
       digitalWrite(ledArray[zz], 0);
     }
     delay(RGBWait);
-    Serial.println(int(colourArray[c])); //show the value for the current colour LED, which corresponds to either the R, G or B of the RGB code
+    // Serial.println(int(colourArray[c])); //show the value for the current colour LED, which corresponds to either the R, G or B of the RGB code
   } 
 
 }
