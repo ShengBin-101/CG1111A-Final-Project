@@ -31,15 +31,15 @@ MeBuzzer                  buzzer;
 #define SIDE_MAX                    18    // side distance threshold in cm
 #define TIME_FOR_LEFT_TURN          315   // The time duration (ms) for turning 90 degrees counter-clockwise      (for red waypoint)
 #define TIME_FOR_RIGHT_TURN         310   // The time duration (ms) for turning 90 degrees clockwise              (for green waypoint)
-#define TIME_FOR_1_GRID_PURPLE      680   // The time duration (ms) for moving forward by 1 grid                  (for purple waypoint)
+#define TIME_FOR_1_GRID_PURPLE      670   // The time duration (ms) for moving forward by 1 grid                  (for purple waypoint)
 #define TIME_FOR_1_GRID_BLUE        750   // The time duration (ms) for moving forward by 1 grid                  (for blue waypoint)
-#define TIME_FOR_SECOND_LEFT_TURN   330   // The time duration (ms) for second 90 degrees counter-clockwise turn  (for purple waypoint) 
-#define TIME_FOR_SECOND_RIGHT_TURN  320   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
+#define TIME_FOR_SECOND_LEFT_TURN   320   // The time duration (ms) for second 90 degrees counter-clockwise turn  (for purple waypoint) 
+#define TIME_FOR_SECOND_RIGHT_TURN  310   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
 #define TIME_FOR_UTURN              560   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
 
 /********** Constants & Variables for PID Controller (only PD is used) **********/
 
-const double kp = 20;  //25              // Proportional Gain/Constant  (P component of PID)
+const double kp = 18;  //25              // Proportional Gain/Constant  (P component of PID)
 const double kd = 20;  //20              // Derivative Constant         (D component of PID)
 
 // Variables to hold final motorspeed calculated for each motor
@@ -95,10 +95,10 @@ struct Color {
 Color colors[] = {
   //  Label -   id - R  -  G  -  B
   {   "Red",    1,  220,  130,  135},
-  {   "Blue",   2,  130,  212,  225},
-  {   "Green",  3,  130,  169,  128},
+  {   "Blue",   2,  180,  212,  225},
+  {   "Green",  3,  160,  169,  128},
   {   "Orange", 4,  195,  170,  120},
-  {   "Purple", 5,  137,  163,  188},
+  {   "Purple", 5,  160,  163,  188},
   {   "White",  0,  255,  255,  255}  
 };
 
@@ -123,7 +123,7 @@ void setup()
   led.setpin(13);
   pinMode(MUSIC_PIN, OUTPUT);
   pinMode(A7, INPUT); // Setup A7 as input for the push button
-  pinMode(IR, INPUT);
+  // pinMode(IR, INPUT);
 
 
   for(int c = 0;c < 2;c++){
@@ -160,7 +160,7 @@ void loop()
       else
       {
         // call IR to check right side (nudge left if we determine robot is too close to wall on right)  
-        checkRight();
+        // checkRight();
         // no wall detected, move straight
         led.setColor(0, 255, 255);
         led.show();
@@ -199,44 +199,44 @@ void loop()
 }
 
 // function updates voltage value for ambient IR
-void updateAmbient(){
-  digitalWrite(A2, 1);
-  digitalWrite(A3, 1);
-  delay(IRWait);
-  ambientIR = analogRead(IR);
-  Serial.print("Ambient: ");
-  Serial.println(ambientIR);
-}
+// void updateAmbient(){
+//   digitalWrite(A2, 1);
+//   digitalWrite(A3, 1);
+//   delay(IRWait);
+//   ambientIR = analogRead(IR);
+//   Serial.print("Ambient: ");
+//   Serial.println(ambientIR);
+// }
 
-void checkRight() {
-  // Take raw value and threshold
-  digitalWrite(A2, 0);
-  digitalWrite(A3, 0);
-  delay(IRWait);
-  int irVolt = analogRead(IR);
-  digitalWrite(A2, 1);
-  digitalWrite(A3, 1);
-  // delay(IRWait);
-  Serial.print("Measured: ");
-  Serial.println(irVolt);
-  int difference = ambientIR - irVolt;
-  Serial.print("Difference: ");
-  Serial.println(difference);
-  updateAmbient();
-  if (difference > 480)
-  {
-    led.setColor(0, 0, 255); // set Right LED to Red
-    led.show();
-    // nudge left
-    move(215,255);
-    delay(3);
-  }
-  else
-  {
-    led.setColor(255, 255, 255); // set Right LED to White
-    led.show();
-  }
-}
+// void checkRight() {
+//   // Take raw value and threshold
+//   digitalWrite(A2, 0);
+//   digitalWrite(A3, 0);
+//   delay(IRWait);
+//   int irVolt = analogRead(IR);
+//   digitalWrite(A2, 1);
+//   digitalWrite(A3, 1);
+//   // delay(IRWait);
+//   Serial.print("Measured: ");
+//   Serial.println(irVolt);
+//   int difference = ambientIR - irVolt;
+//   Serial.print("Difference: ");
+//   Serial.println(difference);
+//   updateAmbient();
+//   if (difference > 480)
+//   {
+//     led.setColor(0, 0, 255); // set Right LED to Red
+//     led.show();
+//     // nudge left
+//     move(215,255);
+//     delay(3);
+//   }
+//   else
+//   {
+//     led.setColor(255, 255, 255); // set Right LED to White
+//     led.show();
+//   }
+// }
 
 /********** Functions (Movement) **********/
 
