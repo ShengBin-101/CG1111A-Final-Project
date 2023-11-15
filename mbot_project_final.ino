@@ -37,7 +37,7 @@ MeBuzzer                  buzzer;
 #define TIME_FOR_1_GRID_BLUE        720   // The time duration (ms) for moving forward by 1 grid                  (for blue waypoint)
 #define TIME_FOR_SECOND_LEFT_TURN   320   // The time duration (ms) for second 90 degrees counter-clockwise turn  (for purple waypoint) 
 #define TIME_FOR_SECOND_RIGHT_TURN  300   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
-#define TIME_FOR_UTURN              560   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
+#define TIME_FOR_UTURN              550   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
 
 /********** Constants & Variables for PID Controller (only PD is used) **********/
 
@@ -159,7 +159,7 @@ void loop()
         // Re-initialise previous error to zero to prevent past interference if ultrasonic sensor goes out of range
         prev_error = 0;
         // no wall present on leftside, call IR to check right side (nudge left if we determine robot is too close to wall on right)  
-        checkRight();
+        // checkRight();
         // no wall detected, move straight
         led.setColor(0, 255, 255);
         led.show();
@@ -176,7 +176,7 @@ void loop()
       // execute waypoint objectives
       execute_waypoint(color);
       // measure and update reading of ambient IR
-      updateAmbient();
+      // updateAmbient();
     }
   }
   else{
@@ -192,7 +192,7 @@ void loop()
     }
     // check if push button is pressed, 
     if (analogRead(PUSHBUTTON) < 100) { 
-      updateAmbient();    // measure and update reading of ambient IR before moving
+      // updateAmbient();    // measure and update reading of ambient IR before moving
       status = true;      // Toggle status
       delay(500);         // Delay 500ms so that a button push won't be counted multiple times.
     }
