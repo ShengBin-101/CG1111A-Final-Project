@@ -106,8 +106,6 @@ static int music_key[] = {
   NOTE_E3, NOTE_D3, NOTE_C3,
 
   NOTE_G2, NOTE_C2, 
-  // NOTE_D2, NOTE_D2, NOTE_C2, NOTE_D2
-
 };
 
 // Duration for each Music Note for Tune
@@ -121,6 +119,5 @@ static int music_duration[] = {
   8, 8, 8,
 
   8, 8
-  // 6, 6, 6, 6
 };
 #endif
