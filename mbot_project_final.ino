@@ -189,7 +189,7 @@ void loop()
     }
     // check if push button is pressed, 
     if (analogRead(PUSHBUTTON) < 100) { 
-      // updateAmbient();    // measure and update reading of ambient IR before moving
+      updateAmbient();    // measure and update reading of ambient IR before moving
       status = true;      // Toggle status
       delay(500);         // Delay 500ms so that a button push won't be counted multiple times.
     }
