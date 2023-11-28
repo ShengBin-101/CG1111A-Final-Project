@@ -2,7 +2,7 @@
 #include "Wire.h"
 #include "MeMCore.h"
 #include "MeRGBLed.h"
-#include "Notes.h"    // Self-made header file to contain Victory Tune for Buzzer
+#include "Notes.h"    // Self-made header file to contain Celebratory Tune for Buzzer
 
 /********** Define Ports **********/
 #define MUSIC_PIN         8                     
@@ -21,6 +21,7 @@ MeBuzzer                  buzzer;
 // Define time delay constants before taking analogue readings (to let voltage stabalise)
 #define RGBWait   60    // Time delay (in ms) before taking LDR reading 
 #define IRWait    20    // Time delay (in ms) before taking IR reading 
+#define IR_THRESHOLD                480   // Amount of dip in value to determine proximity of wall on right side. (Difference between AmbientIR and Measured IR Detector Voltage)
 #define LDRWait   20    // Time delay (in ms) before taking LDR reading 
 
 /********** Constants **********/
@@ -29,15 +30,14 @@ MeBuzzer                  buzzer;
 
 // Movement
 #define MOTORSPEED                  255
-#define IR_THRESHOLD                480   // Amount of dip in value to determine proximity of wall on right side. (Difference between AmbientIR and Measured IR Detector Voltage)
 #define SIDE_MAX                    18    // Side distance threshold (cm)
-#define TIME_FOR_LEFT_TURN          290   // The time duration (ms) for turning 90 degrees counter-clockwise      (for red waypoint)
-#define TIME_FOR_RIGHT_TURN         280   // The time duration (ms) for turning 90 degrees clockwise              (for green waypoint)
+#define TIME_FOR_LEFT_TURN          300   // The time duration (ms) for turning 90 degrees counter-clockwise      (for red waypoint)
+#define TIME_FOR_RIGHT_TURN         300   // The time duration (ms) for turning 90 degrees clockwise              (for green waypoint)
 #define TIME_FOR_1_GRID_PURPLE      640   // The time duration (ms) for moving forward by 1 grid                  (for purple waypoint)
 #define TIME_FOR_1_GRID_BLUE        720   // The time duration (ms) for moving forward by 1 grid                  (for blue waypoint)
 #define TIME_FOR_SECOND_LEFT_TURN   320   // The time duration (ms) for second 90 degrees counter-clockwise turn  (for purple waypoint) 
 #define TIME_FOR_SECOND_RIGHT_TURN  300   // The time duration (ms) for second 90 degrees clockwise turn          (for blue waypoint)
-#define TIME_FOR_UTURN              550   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
+#define TIME_FOR_UTURN              530   // The time duration (ms) for turning 180 degrees clockwise             (for orange waypoint)
 
 /********** Constants & Variables for PID Controller (only PD is used) **********/
 
@@ -95,11 +95,11 @@ struct Color {
 // To be used in KNN classification using euclidean distance. 
 Color colors[] = {
   //  Label/name -   id - R  -  G  -  B
-  {   "Red",    1,  220,  130,  135 },
+  {   "Red",    1,  220,  110,  135 },  
   {   "Blue",   2,  180,  212,  225 },
   {   "Green",  3,  160,  169,  128 },
   {   "Orange", 4,  195,  170,  120 },
-  {   "Purple", 5,  160,  163,  188 },
+  {   "Purple", 5,  160,  163,  170 },
   {   "White",  0,  255,  255,  255 }  
 };
 
@@ -147,19 +147,17 @@ void loop()
   if (status) { 
     ultrasound();             // update global variable dist
     if (!on_line()) {         // check if on black line
-      if (dist!= OUT_OF_RANGE)  
-      {
+      if (dist!= OUT_OF_RANGE)  {
         // wall present, run pd_control
         led.setColor(255, 255, 255);
         led.show();
         pd_control();
       }
-      else
-      {
+      else{
         // Re-initialise previous error to zero to prevent past interference if ultrasonic sensor goes out of range
         prev_error = 0;
         // no wall present on leftside, call IR to check right side (nudge left if we determine robot is too close to wall on right)  
-        // checkRight();
+        checkRight();
         // no wall detected, move straight
         led.setColor(0, 255, 255);
         led.show();
@@ -176,13 +174,12 @@ void loop()
       // execute waypoint objectives
       execute_waypoint(color);
       // measure and update reading of ambient IR
-      // updateAmbient();
+      updateAmbient();
     }
   }
   else{
     // entered if status == false, ie. robot is not running maze-solving algorithm 
-    if (stop == true)
-    {
+    if (stop == true){
       // entered after white waypoint is executed
       led.setColor(255, 0, 0); // set mBot LED to Red
       led.show();
@@ -265,8 +262,6 @@ void updateAmbient(){
   // wait for voltage to stabilise before reading
   delay(IRWait);
   ambientIR = analogRead(IR);
-  // Serial.print("Ambient: ");
-  // Serial.println(ambientIR);
 }
 
 /**
@@ -286,11 +281,7 @@ void checkRight() {
   for(int i = 0; i < 2; i++){  
     digitalWrite(ledArray[i], 1);
   }
-  // Serial.print("Measured: ");
-  // Serial.println(irVolt);
   int difference = ambientIR - irVolt;
-  // Serial.print("Difference: ");
-  // Serial.println(difference);
   if (difference > IR_THRESHOLD)
   {
     // nudge left
