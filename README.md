@@ -1,7 +1,10 @@
 # CG1111A-Final-Project
 mbot Maze Solver Project
 
-# Makeblock Libraries
+## State Diagram (Maze Solving Algorithm)
+![state diagram](mbot_state_diagram.png)
+
+## Makeblock Libraries
 [Link to Makeblock Libraries](https://github.com/Makeblock-official/Makeblock-Libraries/tree/master).
 
 ## Description for each file
